@@ -9,50 +9,68 @@ export function step(RADIUS, sceneEntities, world) {
     const ITERNUM = 3;
 
     function distanceConstraint(agent_i, agent_j, desiredDistance) {
-        // // Return current positions if provided agents are the same
-        // if (agent_i == agent_j)
-        //     return
-        
-        // var p_i_j_distance = distance(agent_i.x, agent_i.z, agent_j.x, agent_i.z)
-        // var result = p_i_j_distance - desiredDistance
-
-        // var delta_pi = {x: 0.0, z: 0.0}
-        // var delta_pj = {x: 0.0, z: 0.0}
-
-        // if (result != 0) {
-        //     if (Math.abs(p_i_j_distance) == 0)
-        //         p_i_j_distance = 0.001
-        //     let change = result / p_i_j_distance
-        //     agent_i.px = -(agent_i.invmass / (agent_i.invmass + agent_j.invmass)) * change * (agent_i.x - agent_j.x)
-        //     agent_i.pz = -(agent_i.invmass / (agent_i.invmass + agent_j.invmass)) * change * (agent_i.z - agent_j.z)
-
-            // agent_j.px = (agent_i.invmass / (agent_i.invmass + agent_j.invmass)) * change * (agent_i.x - agent_j.x)
-            // agent_j.pz = (agent_i.invmass / (agent_i.invmass + agent_j.invmass)) * change * (agent_i.z - agent_j.z)
-        // }
-    }
-
-    function collisionConstraint(agent_i, agent_j) {
-        // Don't calculate collision if the agents are the same
-        if (agent_i == agent_j)
-            return
-
+        // Calculate the distance between the two agents
         let p_i_j_distance = distance(agent_i.px, agent_i.pz, agent_j.px, agent_j.pz)
-        let result = p_i_j_distance - AGENTSIZE
+        let result = p_i_j_distance - desiredDistance
 
+        // Create the delta vectors
         let delta_pi = {x: 0.0, z: 0.0}
+        let delta_pj = {x: 0.0, z: 0.0}
 
+        // If current distance is not desired
         if (result != 0) {
+            // Define the spring constant
             if (Math.abs(p_i_j_distance) == 0)
                 p_i_j_distance = 0.001
+
+            // Calculate change in distance
             let change = result / p_i_j_distance
+
+            // Calculate new delta vector positions
             delta_pi.x = -(agent_i.invmass / (agent_i.invmass + agent_j.invmass) * change * (agent_i.px - agent_j.px))
             delta_pi.z = -(agent_i.invmass / (agent_i.invmass + agent_j.invmass) * change * (agent_i.pz - agent_j.pz))
+
+            delta_pj.x = (agent_j.invmass / (agent_i.invmass + agent_j.invmass) * change * (agent_i.px - agent_j.px))
+            delta_pj.z = (agent_j.invmass / (agent_i.invmass + agent_j.invmass) * change * (agent_i.pz - agent_j.pz))
+            
         }
+
+        // Update agent positions
         agent_i.px += delta_pi.x
         agent_i.pz += delta_pi.z
 
-        agent_j.px -= delta_pi.x
-        agent_j.pz -= delta_pi.z
+        agent_j.px += delta_pj.x
+        agent_j.pz += delta_pj.z
+    }
+
+    function collisionConstraint(agent_i, agent_j) {
+        // Calculate the distance between the two agents
+        let p_i_j_distance = distance(agent_i.px, agent_i.pz, agent_j.px, agent_j.pz)
+        let result = p_i_j_distance - AGENTSIZE
+
+        // Create the delta vectors
+        let delta_pi = {x: 0.0, z: 0.0}
+        let delta_pj = {x: 0.0, z: 0.0}
+
+        // If the agents are current colliding
+        if (result <= 0) {
+            // Calculate the change in distance
+            let change = result / p_i_j_distance
+
+            // Calculate new delta vector positions
+            delta_pi.x = -(agent_i.invmass / (agent_i.invmass + agent_j.invmass) * change * (agent_i.px - agent_j.px))
+            delta_pi.z = -(agent_i.invmass / (agent_i.invmass + agent_j.invmass) * change * (agent_i.pz - agent_j.pz))
+
+            delta_pj.x = (agent_j.invmass / (agent_i.invmass + agent_j.invmass) * change * (agent_i.px - agent_j.px))
+            delta_pj.z = (agent_j.invmass / (agent_i.invmass + agent_j.invmass) * change * (agent_i.pz - agent_j.pz))
+        }
+
+        // Update agent positions
+        agent_i.px += delta_pi.x
+        agent_i.pz += delta_pi.z
+
+        agent_j.px += delta_pj.x
+        agent_j.pz += delta_pj.z
     }
 
     sceneEntities.forEach(function(item) {
